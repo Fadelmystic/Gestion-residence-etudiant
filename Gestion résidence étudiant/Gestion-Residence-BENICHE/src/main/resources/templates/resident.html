@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Résident - Résidence Étudiante</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .info-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .payment-history {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+            margin-top: 2rem;
+        }
+
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-table th,
+        .payment-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .status-paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-pending {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">
+        <img src="https://api.iconify.design/lucide:home.svg" alt="Logo" class="nav-logo">
+        <span>ResidenceManager</span>
+    </div>
+    <div>
+        <a href="/" class="btn btn-primary">Retour</a>
+        <button onclick="logout()" class="btn btn-login">Déconnexion</button>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <section class="info-grid">
+        <div class="info-card">
+            <h3>Informations Personnelles</h3>
+            <div id="userInfo">
+                <!-- Les informations seront ajoutées ici -->
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>Ma Chambre</h3>
+            <div id="roomInfo">
+                <!-- Les informations seront ajoutées ici -->
+            </div>
+        </div>
+    </section>
+
+    <section class="payment-history">
+        <h3>Historique des Paiements</h3>
+        <table class="payment-table">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Montant</th>
+                <th>Statut</th>
+            </tr>
+            </thead>
+            <tbody id="paymentHistory">
+            <!-- L'historique sera ajouté ici -->
+            </tbody>
+        </table>
+    </section>
+</main>
+
+<script src="dashboard.js"></script>
+
+
+    <script>
+        async function checkSession() {
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/profile', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    window.location.href = '/';
+                    return false;
+                }
+            } catch (e){
+                console.error("Error while checking session",e);
+                window.location.href = '/';
+                return false
+            }
+            return true;
+        }
+
+        // Charger les informations de l'utilisateur
+        async function loadUserInfo() {
+            if(await checkSession()) {
+                try {
+                    const response = await fetch('http://localhost:8080/api/residents/me', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    });
+                    const user = await response.json();
+                    displayUserInfo(user);
+                } catch (error) {
+                    console.error('Erreur:', error);
+                }
+            }
+
+        }
+
+        // Afficher les informations de l'utilisateur
+        function displayUserInfo(user) {
+            document.getElementById('userInfo').innerHTML = `
+                <p><strong>Prénom:</strong> ${user.firstName}</p>
+                <p><strong>Nom:</strong> ${user.lastName}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Date Naissance:</strong> ${user.dateNaissance}</p>
+            `;
+        }
+
+        // Charger les informations de la chambre
+        async function loadRoomInfo() {
+            if(await checkSession()) {
+                try {
+                    const response = await fetch('http://localhost:8080/api/residents/me/room', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    });
+                    const room = await response.json();
+                    displayRoomInfo(room);
+                } catch (error) {
+                    console.error('Erreur:', error);
+                }
+            }
+        }
+
+        // Afficher les informations de la chambre
+        function displayRoomInfo(room) {
+            document.getElementById('roomInfo').innerHTML = `
+                <p><strong>Numéro:</strong> ${room.roomNumber}</p>
+                <p><strong>Size:</strong> ${room.size}</p>
+            `;
+        }
+
+        // Charger l'historique des paiements
+        async function loadPaymentHistory() {
+            if(await checkSession()) {
+                try {
+                    const response = await fetch('http://localhost:8080/api/residents/me/payments', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    });
+                    const payments = await response.json();
+                    displayPaymentHistory(payments);
+                } catch (error) {
+                    console.error('Erreur:', error);
+                }
+            }
+        }
+
+        // Afficher l'historique des paiements
+        function displayPaymentHistory(payments) {
+            document.getElementById('paymentHistory').innerHTML = payments.map(payment => `
+                <tr>
+                    <td>${new Date(payment.date).toLocaleDateString()}</td>
+                    <td>${payment.amount}€</td>
+                    <td>
+                        <span class="status ${payment.status === 'PAID' ? 'status-paid' : 'status-pending'}">
+                            ${payment.status === 'PAID' ? 'Payé' : 'En attente'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Déconnexion
+        function logout() {
+            window.location.href = '/';
+            localStorage.removeItem('userRole');
+        }
+
+        // Charger toutes les informations au chargement de la page
+        loadUserInfo();
+        loadRoomInfo();
+        loadPaymentHistory();
+    </script>
+</body>
+</html>
