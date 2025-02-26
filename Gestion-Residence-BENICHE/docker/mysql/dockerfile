@@ -1,0 +1,18 @@
+# Use a lightweight MySQL image
+FROM mysql:8.0-oracle AS base
+
+# Set environment variables to avoid interactive prompts
+ENV MYSQL_ROOT_PASSWORD=Fadel12004
+ENV MYSQL_DATABASE=ResidEtudiante
+ENV MYSQL_USER=root
+ENV MYSQL_PASSWORD=Fadel12004
+
+# Reduce image size by removing unnecessary files
+RUN rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Expose MySQL port
+EXPOSE 3361
+
+# Start MySQL server
+CMD ["mysqld"]

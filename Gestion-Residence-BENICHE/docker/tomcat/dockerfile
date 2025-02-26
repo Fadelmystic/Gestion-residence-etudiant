@@ -1,0 +1,21 @@
+# toujours optimisation et sustainability
+FROM tomcat:10-jdk21-openjdk-slim AS base
+
+# Set environment variables
+ENV CATALINA_HOME /usr/local/tomcat
+ENV PATH $CATALINA_HOME/bin:$PATH
+ENV JAVA_OPTS "-Xms512m -Xmx1024m -XX:+UseG1GC"
+
+# Remove unnecessary files to reduce image size
+RUN rm -rf $CATALINA_HOME/webapps/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy WAR file from build stage
+COPY target/myapp.war $CATALINA_HOME/webapps/ROOT.war
+
+# Expose Tomcat port
+EXPOSE 8083
+
+# Start Tomcat
+CMD ["catalina.sh", "run"]
